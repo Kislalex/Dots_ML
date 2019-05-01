@@ -4,7 +4,7 @@ import math
 import time
 import numpy as np
 
-def sigmaGsigmaF(transformations, shifts, data):
+def applySeriesOfLinearTransformations(transformations, shifts, data):
     result = data
     for (transform,shift) in zip(transformations,shifts):
         result = np.add(np.dot(transform, result), shift)
@@ -50,5 +50,5 @@ class Brain:
                         x[...] *= (0.9 + 0.2 * np.random.random_sample())
                         
     def signal(self, data):
-        return sigmaGsigmaF(self.mat_transformations, self.shifts, data)
+        return applySeriesOfLinearTransformations(self.mat_transformations, self.shifts, data)
 
