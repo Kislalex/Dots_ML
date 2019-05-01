@@ -5,7 +5,6 @@ import time
 import math
 
 from population import Population
-from dot import Dot
 from smart import Brain as Dt
 from field import Field
 
@@ -35,7 +34,6 @@ def createFields(num):
     while (os.path.isfile(s + str(n) + '.txt')):
         f = open(s + str(n) + '.txt',"r")
         finish_ = tuple(map(int,f.readline().split(' ')))
-        print(finish_)
         field = Field(finish_, num)
         while True:
             line = list(map(int,f.readline().split(' ')))
@@ -124,7 +122,7 @@ cv2.imshow('ML',blank)
 rule = (9,50,12,50,10,2)
 
 fields = createFields(rule[0])
-population = Population(np.array([50, height - 50]), 200, rule)
+population = Population(np.array([50, height - 50]), 80, rule)
 redraw(blank, fields, population)
 
 cv2.destroyAllWindows()

@@ -3,8 +3,6 @@ import random
 import math
 import time
 import numpy as np
-import numba
-import vectormath as vm
 
 def sigmaGsigmaF(transformations, shifts, data):
     result = data
