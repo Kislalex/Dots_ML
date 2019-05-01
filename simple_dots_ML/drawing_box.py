@@ -5,7 +5,7 @@ import time
 import math
 
 from population import Population
-from smart import Brain as Dt
+from brain import Brain
 from field import Field
 
 import numpy as np

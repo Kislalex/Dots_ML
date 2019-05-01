@@ -1,12 +1,8 @@
 import sys
 import random
-import math
 import time
 import numpy as np
-from multiprocessing import cpu_count,Pool
-from functools import partial
-
-from smart_dot import Dot
+from dot import Dot
 
 def poolUpdate(dot, field_):
     dot.update(field_)
