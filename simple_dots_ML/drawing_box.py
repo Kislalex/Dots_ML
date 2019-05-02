@@ -7,7 +7,7 @@ import math
 from population import Population
 from brain import Brain
 from field import Field
-
+from field import turnByAngleAndNormailze as turnByAngle
 import numpy as np
 
 height = 900
@@ -20,13 +20,13 @@ yellow = (140,230,240)
 ttl = 1
 directions = list(np.linspace(-math.pi / 2, math.pi / 2, 7))[1:-1]
      
-def turnByAngle(vect, angle):
+'''def turnByAngle(vect, angle):
     turn = np.array([[ np.cos(angle),  np.sin(angle)],
                      [-np.sin(angle), np.cos(angle)]])
     res = np.dot(turn, vect)
     res = np.divide(res, np.linalg.norm(res))
     return res
-
+'''
 def createFields(num):
     fields = []
     s='fields/field'

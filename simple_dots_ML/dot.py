@@ -4,9 +4,24 @@ import time
 
 import numpy as np
 from brain import Brain
+from field import turnByAngleAndNormailze as turnByAngle
 
-def getAccFromAction(action):
-    return action
+def scoreFromDist(dist_, base):
+    # 0-1500 -> 0-15
+    var_x = dist_ / 100.
+    # 0-15 -> 1 - -1
+    score = np.tanh(1.8 - var_x)
+    # 1 - -1 -> base - 1
+    score = (score + 1) * ((base - 1.0) / 2.0) + 1
+    return score
+
+def getAccFromAction(action, vel):
+    if (np.linalg.norm(vel) < 0.001):
+        return np.array([1, -1])
+    alpha = action[0] * 2 * np.pi
+    value = action[1] + 1
+    acc = turnByAngle(vel, alpha)
+    return acc * value
 
 def newVelocity(vel, acc, ttl, max_vel):
     vel = np.add(vel, ttl * acc)
@@ -21,16 +36,19 @@ def scoreForPoint(next_checkpoints,
                   min_distance,
                   time):
     score = 0
+    power = max(1.0, max_checkpoint)
+    base = np.power(10000, 1.0 / power)
     if (next_checkpoints > max_checkpoint):
-        score = (100 + 10000.0 / time)
+        score = (10000 + 100000.0 / time)
     else:
-        if (max_checkpoint == 0):
-            score = (100.0 / ((distace_to_goal + min_distance) ** 2))
+        mult = (power ** next_checkpoints)
+        dist_to_score = 0
+        if (max_checkpoint == next_checkpoints):
+            dist_to_score += min_distance
+            
         else:
-            mult = (2 ** next_checkpoints)
-            dist_to_score = (distace_to_checkpoint + 10)
-            score = 1 * next_checkpoints + (10.0 / (distace_to_checkpoint ** 2))
-            score *= mult
+            dist_to_score += distace_to_checkpoint
+        score = mult * scoreFromDist(dist_to_score, base)
     return score
     
 
@@ -63,7 +81,7 @@ class Dot:
         # get the brain signal
         action = self.dot_brain.signal(brain_info)
         # finally move, limiting velocity
-        self.acc = getAccFromAction(action)
+        self.acc = getAccFromAction(action, self.vel)
         self.vel = newVelocity(self.vel, self.acc, ttl, self.max_vel)
         self.pos = np.add(self.pos, ttl * self.vel)
         self.time = self.time + 1

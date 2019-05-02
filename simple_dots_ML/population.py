@@ -9,7 +9,7 @@ def poolUpdate(dot, field_):
     return dot
 
 class Population:
-    TTL = 900
+    TTL = 500
     def __init__(self, start, size, rule):
         self.dots = [Dot(start, rule) for i in range(size)]
         self.total_score = 0
