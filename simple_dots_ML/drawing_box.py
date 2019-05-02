@@ -73,45 +73,44 @@ def drawLeaderInfo(img, leader, field, score):
     cv2.putText(img, "max_score: " + str(score), (10,110), 16, 0.6, (0,0,0))
 
 def redraw(blank, fields, population):
-    n = len(fields) - 1
-    m = 0
+    level = 0
+    attempt = 1
     max_score = 0
     while True:
         x = population.allDotsStopped()
         if (x == 0):
             if (population.dots[0].reached_goal):
-                m += 1
-                if (m > 10):
-                    m = 0
-                    n += 1
-                    if (n >= len(fields)):
-                        n = 0
-                    max_score = 0
-            max_score = population.computeScore(fields[n])
+                level += 1
+                if (level >= len(fields)):
+                    level = 0
+                max_score = 0
+                attempt = 0
+            max_score = population.computeScore(fields[level])
             population.naturalSelection()
             population.mutation()
+            attempt +=1
         else:
             begin = time.time()
-            population.update(fields[n])
+            population.update(fields[level])
             end = time.time()
             img = blank.copy()
-            for polygon in fields[n].obsticales:
+            for polygon in fields[level].obsticales:
                 cv2.polylines(img, [np.array(polygon.exterior.coords, np.int32)], True, blue, 5)
-            for polygon in fields[n].checkpoints:
+            for polygon in fields[level].checkpoints:
                 cv2.polylines(img, [np.array(polygon.exterior.coords, np.int32)], True, yellow, 1)
                 
-            cv2.circle(img, tuple(fields[n].finish.astype(int)), 10, red, -1)
-            cv2.circle(img, tuple(fields[n].finish.astype(int)), 10, (0,0,0), 1)
+            cv2.circle(img, tuple(fields[level].finish.astype(int)), 10, red, -1)
+            cv2.circle(img, tuple(fields[level].finish.astype(int)), 10, (0,0,0), 1)
 
             for dot in population.dots[1:]:
                 cv2.circle(img, tuple(dot.pos.astype(int)), 3, (0,0,0), -1)
             
-            drawLeaderInfo(img, population.dots[0], fields[n], max_score)
+            drawLeaderInfo(img, population.dots[0], fields[level], max_score)
             
             cv2.putText(img, "gen : " + str(population.gen), (10,30), 16, 0.6, (0,0,0))
             cv2.putText(img, "fps : " + str(1.0 / (end - begin)), (10,50), 16, 0.6, (0,0,0))
             cv2.putText(img, "alive : " + str(x), (10,70), 16, 0.6, (0,0,0))
-            cv2.putText(img, "level : " + str(n) + ',' + str(m), (10,90), 16, 0.6, (0,0,0))
+            cv2.putText(img, "level : " + str(level) + ' attempt : ' + str(attempt), (10,90), 16, 0.6, (0,0,0))
             cv2.imshow('ML',img)
             key = cv2.waitKey(ttl)
             if (key == ord('q')):

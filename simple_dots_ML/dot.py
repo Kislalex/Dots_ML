@@ -6,13 +6,33 @@ import numpy as np
 from brain import Brain
 
 def getAccFromAction(action):
-    return 4 * action
+    return action
 
 def newVelocity(vel, acc, ttl, max_vel):
     vel = np.add(vel, ttl * acc)
     if (np.linalg.norm(vel) > max_vel):
             vel = vel * (max_vel / np.linalg.norm(vel))
     return vel
+
+def scoreForPoint(next_checkpoints, 
+                  max_checkpoint, 
+                  distace_to_goal, 
+                  distace_to_checkpoint,
+                  min_distance,
+                  time):
+    score = 0
+    if (next_checkpoints > max_checkpoint):
+        score = (100 + 10000.0 / time)
+    else:
+        if (max_checkpoint == 0):
+            score = (100.0 / ((distace_to_goal + min_distance) ** 2))
+        else:
+            mult = (2 ** next_checkpoints)
+            dist_to_score = (distace_to_checkpoint + 10)
+            score = 1 * next_checkpoints + (10.0 / (distace_to_checkpoint ** 2))
+            score *= mult
+    return score
+    
 
 class Dot:
     vision_depth = 50
@@ -57,6 +77,7 @@ class Dot:
                 self.dead = True
             if (field.isFinished(self.pos)):
                 self.reached_goal = True
+                self.checkpoints += 1
                 return True
             if (not self.reached_goal):
                 if (field.isPassingCheckPoint(self.pos, self.checkpoints)):
@@ -64,15 +85,15 @@ class Dot:
         return False
 
     def computeScore(self, field):
-        self.score = (4 ** self.checkpoints)
         closest_goal = field.findNextGoal(self.pos, self.vel, self.checkpoints)[0] * 2000
-        if (self.reached_goal):
-            self.score *= (10 + 100.0 / self.time)
-        else:
-            distace_to_score = self.min_distance + closest_goal 
-            if (self.checkpoints > 3) :
-                print(closest_goal)
-            self.score *= (100.0 / (distace_to_score ** 2))
+        distace_to_goal = field.findNextGoal(self.pos, self.vel, 1000)[0] * 2000
+        max_checkpoint = len(field.checkpoints)
+        self.score = scoreForPoint(self.checkpoints, 
+                                   max_checkpoint, 
+                                   distace_to_goal, 
+                                   closest_goal, 
+                                   self.min_distance,
+                                   self.time)
             
     def reproduce(self, start):
         baby = Dot(start, self.rule)
