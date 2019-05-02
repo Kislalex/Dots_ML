@@ -107,10 +107,10 @@ def redraw(blank, fields, population):
             
             drawLeaderInfo(img, population.dots[0], fields[n])
             
-            cv2.putText(img, "gen : " + str(population.gen), (10,30), 2, 0.6, (0,0,0))
-            cv2.putText(img, "fps : " + str(1.0 / (end - begin)), (10,50), 2, 0.6, (0,0,0))
-            cv2.putText(img, "alive : " + str(x), (10,70), 2, 0.6, (0,0,0))
-            cv2.putText(img, "level : " + str(n) + ',' + str(m), (10,90), 2, 0.6, (0,0,0))
+            cv2.putText(img, "gen : " + str(population.gen), (10,30), 16, 0.6, (0,0,0))
+            cv2.putText(img, "fps : " + str(1.0 / (end - begin)), (10,50), 16, 0.6, (0,0,0))
+            cv2.putText(img, "alive : " + str(x), (10,70), 16, 0.6, (0,0,0))
+            cv2.putText(img, "level : " + str(n) + ',' + str(m), (10,90), 16, 0.6, (0,0,0))
             cv2.imshow('ML',img)
             key = cv2.waitKey(ttl)
             if (key == ord('q')):

@@ -36,12 +36,8 @@ class Population:
             if (dot.score > max_score):
                 max_score = dot.score
                 self.best_dot_index = ind
-        if (self.dots[self.best_dot_index].score < self.dots[0].score * 1.5):
+        if (self.dots[self.best_dot_index].score < self.dots[0].score * 1.1):
             self.best_dot_index = 0
-        if self.best_dot_index == 0:
-            print("The leader still best")
-        else:
-            print("New leader found")
     
     def allDotsStopped(self):
         non_dead = 0
