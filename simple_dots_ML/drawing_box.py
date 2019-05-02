@@ -18,7 +18,7 @@ green = (0,128,0)
 red = (0, 0, 255)
 yellow = (140,230,240)
 ttl = 1
-directions = list(np.linspace(-math.pi / 2, math.pi / 2, 9 - 2))
+directions = list(np.linspace(-math.pi / 2, math.pi / 2, 7))[1:-1]
      
 def turnByAngle(vect, angle):
     turn = np.array([[ np.cos(angle),  np.sin(angle)],
@@ -52,7 +52,7 @@ def createFields(num):
     return fields
 
 
-def drawLeaderInfo(img, leader, field):
+def drawLeaderInfo(img, leader, field, score):
     cv2.circle(img, tuple(leader.pos.astype(int)), 5, green, -1)
     cv2.circle(img, tuple(leader.pos.astype(int)), 5, (0,0,0), 1)
     if(np.linalg.norm(leader.vel) > 0.001): 
@@ -70,11 +70,12 @@ def drawLeaderInfo(img, leader, field):
             cv2.line(img, tuple(leader.pos.astype(int)), 
                 tuple(goal.astype(int)), (0,0,0), 1)
             cv2.circle(img, tuple(goal.astype(int)), 3, orange, -1)
-            
+    cv2.putText(img, "max_score: " + str(score), (10,110), 16, 0.6, (0,0,0))
 
 def redraw(blank, fields, population):
-    n = 0
+    n = len(fields) - 1
     m = 0
+    max_score = 0
     while True:
         x = population.allDotsStopped()
         if (x == 0):
@@ -85,8 +86,8 @@ def redraw(blank, fields, population):
                     n += 1
                     if (n >= len(fields)):
                         n = 0
-                    print(n)
-            population.computeScore(fields[n])
+                    max_score = 0
+            max_score = population.computeScore(fields[n])
             population.naturalSelection()
             population.mutation()
         else:
@@ -105,7 +106,7 @@ def redraw(blank, fields, population):
             for dot in population.dots[1:]:
                 cv2.circle(img, tuple(dot.pos.astype(int)), 3, (0,0,0), -1)
             
-            drawLeaderInfo(img, population.dots[0], fields[n])
+            drawLeaderInfo(img, population.dots[0], fields[n], max_score)
             
             cv2.putText(img, "gen : " + str(population.gen), (10,30), 16, 0.6, (0,0,0))
             cv2.putText(img, "fps : " + str(1.0 / (end - begin)), (10,50), 16, 0.6, (0,0,0))
@@ -119,10 +120,10 @@ def redraw(blank, fields, population):
 blank = 255 * np.ones((height, width, 3),dtype = "uint8")
 cv2.imshow('ML',blank)
 
-rule = (9,50,12,50,10,2)
+rule = (7,50,12,50,10,2)
 
 fields = createFields(rule[0])
-population = Population(np.array([50, height - 50]), 80, rule)
+population = Population(np.array([50, height - 50]), 200, rule)
 redraw(blank, fields, population)
 
 cv2.destroyAllWindows()

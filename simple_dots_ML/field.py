@@ -48,7 +48,7 @@ class Field:
         self.finish = np.array(finish)
         self.directions = []
         if (info_size > 2):
-            self.directions = list(np.linspace(-math.pi / 2, math.pi / 2, info_size - 2))
+            self.directions = list(np.linspace(-math.pi / 2, math.pi / 2, info_size))[1:-1]
         self.obsticales = []
         self.checkpoints = []
 

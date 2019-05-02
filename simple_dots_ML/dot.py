@@ -29,7 +29,7 @@ class Dot:
         self.dead = False
         self.reached_goal = False
         self.checkpoints = 0
-        self.min_distance = 2000
+        self.min_distance = 5000
         #
         self.time = 0
         self.score = 0
@@ -40,7 +40,6 @@ class Dot:
             return
         #check the objectives
         brain_info = field.gatherInfo(self.pos, self.vel, self.checkpoints)
-        self.min_distance = min(self.min_distance, brain_info[0] * 2000)
         # get the brain signal
         action = self.dot_brain.signal(brain_info)
         # finally move, limiting velocity
@@ -48,7 +47,8 @@ class Dot:
         self.vel = newVelocity(self.vel, self.acc, ttl, self.max_vel)
         self.pos = np.add(self.pos, ttl * self.vel)
         self.time = self.time + 1
-        
+        #Update min distance by looking at the goal TODO change to the distance to goal not to 1000 checkpoint
+        self.min_distance = min(self.min_distance, field.findNextGoal(self.pos, self.vel, 1000)[0] * 2000)
 
     def update(self, field):
         if ((not self.dead) and (not self.reached_goal)):
@@ -65,11 +65,14 @@ class Dot:
 
     def computeScore(self, field):
         self.score = (4 ** self.checkpoints)
+        closest_goal = field.findNextGoal(self.pos, self.vel, self.checkpoints)[0] * 2000
         if (self.reached_goal):
-            self.score *= (1 + 100.0 / self.time)
+            self.score *= (10 + 100.0 / self.time)
         else:
-            distace_to_score = self.min_distance + 10
-            self.score *= (1.0 / (distace_to_score ** 2))
+            distace_to_score = self.min_distance + closest_goal 
+            if (self.checkpoints > 3) :
+                print(closest_goal)
+            self.score *= (100.0 / (distace_to_score ** 2))
             
     def reproduce(self, start):
         baby = Dot(start, self.rule)
