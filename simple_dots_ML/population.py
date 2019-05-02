@@ -18,13 +18,8 @@ class Population:
         self.start = start
 
     def update(self, field):
-        #p = Pool(cpu_count())
-        #poolFunction = partial(poolUpdate, field_ = field)
-        #self.dots = p.map(poolFunction, self.dots)
         for dot in self.dots:
             dot.update(field)
-        #p.close()
-        #p.join()
            
     def computeScore(self, field):
         max_score = -1
