@@ -5,7 +5,7 @@ import time
 import numpy as np
 
 
-def applySeriesOfLinearTransformations(transformations, shifts, data, history=[]):
+def apply_series_of_linear_transformations(transformations, shifts, data, history=[]):
     result = data
     history.append(np.copy(data))
     for (transform, shift) in zip(transformations, shifts):
@@ -71,6 +71,7 @@ def calculate_full_gradient(history, transformations, shifts):
             # dg_i/dc = dg_i * b * df/dc
             #
             # dg/dc = diag_dg .*. (b * df/dc)
+
             # multiply by the current transformation
             gradient_transformations[update_index] = np.tensordot(
                 transformations[index], gradient_transformations[update_index], 1
@@ -78,6 +79,7 @@ def calculate_full_gradient(history, transformations, shifts):
             gradient_shifts[update_index] = np.tensordot(
                 transformations[index], gradient_shifts[update_index], 1
             )
+
             # multiply by the current derivative
             gradient_transformations[update_index] = np.tensordot(
                 diagonal_derivative, gradient_transformations[update_index], 1
@@ -94,19 +96,21 @@ class Brain:
         self.rule = np.copy(rule)
         sizes = list(zip(rule[1:], rule[:-1]))
         x = lambda a: 2 * np.random.random(a) - 1
-        self.mat_transformations = [x(size) for size in sizes]
+        self.affine_transformations = [x(size) for size in sizes]
         self.shifts = [x(size[0]) for size in sizes]
         self.history = []
 
     def copy(self):
         copied = Brain((1, 1))
         copied.rule = np.copy(self.rule)
-        copied.mat_transformations = [np.copy(tr) for tr in self.mat_transformations]
+        copied.affine_transformations = [
+            np.copy(tr) for tr in self.affine_transformations
+        ]
         copied.shifts = [np.copy(tr) for tr in self.shifts]
         return copied
 
     def mutate(self, mutation_rate=0.04, stable_rate=0.08):
-        for transform in self.mat_transformations:
+        for transform in self.affine_transformations:
             with np.nditer(transform, op_flags=["readwrite"]) as it:
                 for x in it:
                     chance = np.random.random()
@@ -125,27 +129,47 @@ class Brain:
 
     def signal(self, data):
         self.history = []
-        return applySeriesOfLinearTransformations(
-            self.mat_transformations, self.shifts, data, self.history
+        return apply_series_of_linear_transformations(
+            self.affine_transformations, self.shifts, data, self.history
         )
 
     def compute_last_gradient(self):
         return calculate_full_gradient(
-            self.history, self.mat_transformations, self.shifts
+            self.history, self.affine_transformations, self.shifts
         )
 
     def apply_gradient_decent(self, delta_transformations, delta_shifts):
-        for transform, delta in list(zip(self.transformations, delta_transformations)):
-            transform = np.add(transform, delta)
+        updated_affine_transformations = []
+        updated_shifts = []
+        for transform, delta in list(
+            zip(self.affine_transformations, delta_transformations)
+        ):
+            assert transform.shape == delta.shape, (
+                "The size of modification isn't matching the size of the base:"
+                + str(transform.shape)
+                + " neq "
+                + str(delta.shape)
+            )
+            updated_affine_transformations.append(np.add(transform, delta))
         for shift, delta in list(zip(self.shifts, delta_shifts)):
-            shift = np.add(shift, delta)
+            assert shift.shape == delta.shape, (
+                "The size of modification isn't matching the size of the base:"
+                + str(shift.shape)
+                + " neq "
+                + str(delta.shape)
+            )
+            updated_shifts.append(np.add(shift, delta))
+        self.affine_transformations = updated_affine_transformations
+        self.shifts = updated_shifts
 
     def save_to_file(self, file_to_save):
         file_to_save.write(",".join(str(number) for number in self.rule))
         file_to_save.write("\n")
         for i in range(len(self.shifts)):
             file_to_save.write(
-                ",".join(str(number) for number in self.mat_transformations[i].ravel())
+                ",".join(
+                    str(number) for number in self.affine_transformations[i].ravel()
+                )
             )
             file_to_save.write("\n")
             file_to_save.write(",".join(str(number) for number in self.shifts[i]))
@@ -153,12 +177,12 @@ class Brain:
 
     def read_from_file(self, file_to_read):
         self.rule = tuple(map(int, file_to_read.readline().split(",")))
-        self.mat_transformations = []
+        self.affine_transformations = []
         self.shifts = []
         for i in range(len(self.rule) - 1):
             line = file_to_read.readline()
             array_ = np.array(list(map(float, line.split(","))))
-            self.mat_transformations.append(
+            self.affine_transformations.append(
                 np.reshape(array_, (self.rule[i + 1], self.rule[i]))
             )
             line = file_to_read.readline()

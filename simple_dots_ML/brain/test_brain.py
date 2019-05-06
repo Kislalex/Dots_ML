@@ -1,4 +1,4 @@
-from brain import Brain
+from .brain import Brain
 import numpy as np
 import pytest
 
@@ -19,7 +19,7 @@ def test_number_tivial_nonzero_brain():
     # create a basic brain f(x) = th(a + 0 * x)
     test_shift = 0.12345
     test_brain = Brain(rule)
-    test_brain.mat_transformations[0][0] = 0
+    test_brain.affine_transformations[0][0] = 0
     test_brain.shifts[0] = test_shift
     y = test_brain.signal(np.array([1]))
     assert len(test_brain.shifts) == 1
@@ -38,7 +38,7 @@ def test_simple_brain_returns_expected_values():
     # create a basic brain f(x) = th(a + 0 * x)
     test_shift = 0.12345
     test_brain = Brain(rule)
-    test_brain.mat_transformations[0][0] = 0
+    test_brain.affine_transformations[0][0] = 0
     test_brain.shifts[0] = test_shift
     y = test_brain.signal(np.array([1]))[0]
     dA, db = test_brain.compute_last_gradient()
@@ -56,6 +56,7 @@ def test_brain_returns_correct_shapes():
     y = test_brain.signal(test_data)
     dA, db = test_brain.compute_last_gradient()
     assert len(dA) == 4
+    assert len(y) == 5
     for i in range(len(dA)):
         assert dA[i].shape == (5,) + (rule[i + 1], rule[i])
         assert db[i].shape == (5,) + (rule[i + 1],)
@@ -87,8 +88,8 @@ def test_brain_compute_gradient_formulas_correct():
     x_vect = np.array([0.5, 0.2])
     # Build correspondent Brain
     test_brain = Brain(rule)
-    test_brain.mat_transformations[0] = b_mat
-    test_brain.mat_transformations[1] = a_mat
+    test_brain.affine_transformations[0] = b_mat
+    test_brain.affine_transformations[1] = a_mat
     test_brain.shifts[0] = w_vect
     test_brain.shifts[1] = v_vect
     g_vect = test_brain.signal(x_vect)
@@ -153,3 +154,48 @@ def test_brain_compute_gradient_formulas_correct():
     np.testing.assert_allclose(dg_da, dA[1])
     np.testing.assert_allclose(dg_dw, db[0])
     np.testing.assert_allclose(dg_db, dA[0])
+
+
+def test_simple_gradient_actually_works():
+    rule = (1, 1)
+    # create a basic brain f(x) = th(a + b * x)
+    input_ = np.array([0.512312])
+    goal_value = np.array([0.7523123])
+    test_brain = Brain(rule)
+    y = np.array([0])
+    for i in range(100):
+        # get the output
+        y = test_brain.signal(input_)
+        # compute the gradients
+        dA, db = test_brain.compute_last_gradient()
+        # compute multipiers d(x-a) ** 2 = 2 * (x-a) * dx
+        diff = np.subtract(y, goal_value)
+        diff = (-1) * diff
+        #
+        delta_A = [np.tensordot(diff, dA_i, 1) for dA_i in dA]
+        delta_b = [np.tensordot(diff, db_i, 1) for db_i in db]
+        test_brain.apply_gradient_decent(delta_A, delta_b)
+    assert len(y) == 1
+    assert y[0] == pytest.approx(goal_value[0], Eps)
+
+
+def test_multidim_gradient_actually_works():
+    rule = (3, 10, 10, 3)
+    # create a basic brain f(x) = th(a + b * x)
+    input_ = np.array([0.512312, 0.1, 0.2])
+    goal_value = np.array([0.7523123, 0.2, 0.3])
+    test_brain = Brain(rule)
+    y = np.array([0])
+    for i in range(500):
+        # get the output
+        y = test_brain.signal(input_)
+        # compute the gradients
+        dA, db = test_brain.compute_last_gradient()
+        # compute multipiers d(x-a) ** 2 = 2 * (x-a) * dx
+        diff = np.subtract(y, goal_value)
+        diff = (-1) * diff
+        delta_A = [np.tensordot(diff, dA_i, 1) for dA_i in dA]
+        delta_b = [np.tensordot(diff, db_i, 1) for db_i in db]
+        test_brain.apply_gradient_decent(delta_A, delta_b)
+    assert len(y) == len(goal_value)
+    assert y[0] == pytest.approx(goal_value[0], Eps)

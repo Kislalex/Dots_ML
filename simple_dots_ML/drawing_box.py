@@ -136,7 +136,6 @@ def redraw(blank, fields, population):
                 break
 
 
-
 blank = 255 * np.ones((height, width, 3), dtype="uint8")
 cv2.imshow("ML", blank)
 
@@ -147,10 +146,10 @@ population = Population(np.array([50, height - 50]), 200, rule)
 dot_brain_file = open("test_brain.txt", "r")
 population.dots[0].dot_brain.read_from_file(dot_brain_file)
 dot_brain_file.close()
-for i in range(1,200):
-    population.dots[i].dot_brain = population.dots[0].dot_brain.copy() 
+for i in range(1, 200):
+    population.dots[i].dot_brain = population.dots[0].dot_brain.copy()
     population.dots[i].dot_brain.mutate(0.01, 0.03)
-#population = Population(np.array([50, height - 50]), 200, rule)
+# population = Population(np.array([50, height - 50]), 200, rule)
 redraw(blank, fields, population)
 
 cv2.destroyAllWindows()
