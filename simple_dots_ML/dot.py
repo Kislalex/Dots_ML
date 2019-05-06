@@ -3,7 +3,7 @@ import random
 import time
 
 import numpy as np
-from brain import Brain
+from brain.brain import Brain
 from field import turn_by_angle_and_normalize as turn_by_angle
 
 
@@ -42,12 +42,12 @@ def compute_score_for_point(
     time,
 ):
     score = 0
-    power = max(1.0, max_checkpoint)
+    power = 1.0 + max_checkpoint
     base = np.power(10000, 1.0 / power)
     if next_checkpoints > max_checkpoint:
         score = 10000 + 100000.0 / time
     else:
-        mult = power ** next_checkpoints
+        mult = base ** next_checkpoints
         dist_to_score = 0
         if max_checkpoint == next_checkpoints:
             dist_to_score += min_distance

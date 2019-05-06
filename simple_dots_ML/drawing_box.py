@@ -3,12 +3,13 @@ import cv2
 import os
 import time
 import math
+import numpy as np
 
 from population import Population
-from brain import Brain
+from brain.brain import Brain
 from field import Field
 from field import turn_by_angle_and_normalize as turn_by_angle
-import numpy as np
+
 
 height = 900
 width = 1200
@@ -73,7 +74,7 @@ def draw_leader_info(img, leader, field, score):
 
 
 def redraw(blank, fields, population):
-    level = 0
+    level = 14
     attempt = 1
     max_score = 0
     while True:
@@ -112,7 +113,7 @@ def redraw(blank, fields, population):
             draw_leader_info(img, population.dots[0], fields[level], max_score)
 
             cv2.putText(
-                img, "gen : " + str(population.gen), (10, 30), 16, 0.6, (0, 0, 0)
+                img, "gen : " + str(population.gen), (10, 30), 16, 0.6, (0, 0, 0), 1
             )
             cv2.putText(
                 img, "fps : " + str(1.0 / (end - begin)), (10, 50), 16, 0.6, (0, 0, 0)
@@ -135,11 +136,6 @@ def redraw(blank, fields, population):
                 break
 
 
-test = Brain((2, 2))
-f = open("test_brain.txt", "r")
-test.read_from_file(f)
-q = np.array([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.1])
-print(test.signal(q))
 
 blank = 255 * np.ones((height, width, 3), dtype="uint8")
 cv2.imshow("ML", blank)
@@ -148,6 +144,13 @@ rule = (7, 50, 12, 50, 10, 2)
 
 fields = create_fields(rule[0])
 population = Population(np.array([50, height - 50]), 200, rule)
+dot_brain_file = open("test_brain.txt", "r")
+population.dots[0].dot_brain.read_from_file(dot_brain_file)
+dot_brain_file.close()
+for i in range(1,200):
+    population.dots[i].dot_brain = population.dots[0].dot_brain.copy() 
+    population.dots[i].dot_brain.mutate(0.01, 0.03)
+#population = Population(np.array([50, height - 50]), 200, rule)
 redraw(blank, fields, population)
 
 cv2.destroyAllWindows()
