@@ -29,7 +29,7 @@ And run the drawing_box.py
 ```
 or
 ```
-python3.7 drawing_box.py
+python3.9 drawing_box.py
 ```
 
 ## Running the tests
