@@ -14,36 +14,37 @@ def line_intersections(polygon, line):
     return list(points.coords)
 
 
-def turn_by_angle_and_normalize(vect, angle):
-    turn = np.array([[np.cos(angle), np.sin(angle)], [-np.sin(angle), np.cos(angle)]])
-    res = np.dot(turn, vect)
-    res = np.divide(res, np.linalg.norm(res))
+def turn_unit_vector_by_angle(vect, angle):
+    turn_matrix = np.array(
+        [np.cos(angle), np.sin(angle), -np.sin(angle), np.cos(angle)]
+    ).reshape(2, 2)
+    res = np.dot(turn_matrix, vect)
+    res = res / np.linalg.norm(res)
     return res
 
 
-def compute_directions(point, pos, vel):
-    dist_ = np.linalg.norm(np.subtract(point, pos)) / 2000.0
-    alpha = 0
+def compute_azimut(target, pos, vel):
     # if we actually have non-zero velocity
-    if np.linalg.norm(vel) > 0.001:
-        r_vect = np.subtract(point, pos)
-        r_vect = np.divide(r_vect, np.linalg.norm(r_vect))
-        normal_ = np.divide(vel, np.linalg.norm(vel))
-        # find the angle between
-        alpha = np.arctan2(np.cross(r_vect, normal_), np.dot(r_vect, normal_)) / 10.0
-    return [dist_, alpha]
+    if np.linalg.norm(vel) < 0.001:
+        return 0
+    normal_ = vel / np.linalg.norm(vel)
+    direction = target - pos
+    if np.linalg.norm(direction) < 0.001:
+        return 0
+    direction = direction / np.linalg.norm(direction)
+    alpha = np.arctan2(np.cross(direction, normal_), np.dot(direction, normal_))
+    return alpha
 
 
-def closet_point(polynom, pos):
-    pol_ext = gm.LinearRing(polynom.exterior.coords)
+def closet_point(polygon, pos):
+    polygon_exterior = gm.LinearRing(polygon.exterior.coords)
     point = gm.Point(pos)
-    d = pol_ext.project(point)
-    p = pol_ext.interpolate(d)
+    d = polygon_exterior.project(point)
+    p = polygon_exterior.interpolate(d)
     return list(p.coords)
 
 
 class Field:
-
     dist_to_touch = 5
     vision_depth = 100
 
@@ -77,34 +78,40 @@ class Field:
         return dist_ < self.dist_to_touch
 
     def is_finished(self, pos):
-        dist_ = np.linalg.norm(np.subtract(self.finish, pos))
+        dist_ = np.linalg.norm(self.finish - pos)
         return dist_ < 2 * self.dist_to_touch
 
     def find_next_goal(self, pos, vel, check_num):
         # if the next goal is final - return direction to it
         if check_num >= len(self.checkpoints):
-            return compute_directions(self.finish, pos, vel)
+            return [
+                np.linalg.norm(self.finish - pos) / 1000.0,
+                compute_azimut(self.finish, pos, vel) / 7.0,
+            ]
         else:
             point = closet_point(self.checkpoints[check_num], pos)
-            return compute_directions(point, pos, vel)
+            return [
+                np.linalg.norm(point - pos) / 1000.0,
+                compute_azimut(point, pos, vel) / 7.0,
+            ]
 
     def gather_info(self, pos, vel, check_num):
         goal_info = self.find_next_goal(pos, vel, check_num)
-        vision_info = self.point_observation(pos, vel)
-        return np.array(goal_info + vision_info)
+        vision_info = self.dot_obsticales_vision(pos, vel)
+        return np.array(goal_info + vision_info, dtype=float)
 
-    def point_observation(self, pos, vel):
-        res = []
+    def dot_obsticales_vision(self, pos, vel):
         if np.linalg.norm(vel) < 0.001:
-            vel = np.subtract(self.finish, pos)
+            vel = self.finish - pos
+
         vision_lines = []
-        for dir_ in self.directions:
-            ray = turn_by_angle_and_normalize(vel, dir_)
+        for direction in self.directions:
+            ray = turn_unit_vector_by_angle(vel, direction)
             # set up the ray line in direction
-            vision_lines.append(
-                gm.LineString([pos, np.add(pos, self.vision_depth * ray)])
-            )
-        pos_point = gm.Point(pos)
+            vision_lines.append(gm.LineString([pos, pos + self.vision_depth * ray]))
+
+        gm_pos = gm.Point(pos)
+        vision_distances = []
         for line in vision_lines:
             # find closes point of intersection
             current_vision = self.vision_depth
@@ -112,6 +119,6 @@ class Field:
             for obs in self.obsticales:
                 points = obs.intersection(line)
                 if not points.is_empty:
-                    current_vision = min(current_vision, points.distance(pos_point))
-            res.append(current_vision / self.vision_depth)
-        return res
+                    current_vision = min(current_vision, points.distance(gm_pos))
+            vision_distances.append(current_vision / self.vision_depth)
+        return vision_distances
